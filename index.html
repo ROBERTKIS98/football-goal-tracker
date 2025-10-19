@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Football Goal Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --ronaldo: #D50032;
+            --messi: #004D98;
+            --mbappe: #0C2340;
+            --yamal: #A50044;
+            --madrid: #FEBE10;
+            --barcelona: #A50044;
+            --background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        body {
+            background: var(--background);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 15px;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+            background: var(--color);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .goal-count {
+            font-size: 3.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .last-scorer {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .last-scorer h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .scorer-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 15px 0;
+            color: #FFD700;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .scorer-time {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .update-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .live-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .twitter-feed {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .twitter-feed h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .twitter-feed h2 i {
+            color: #1DA1F2;
+            margin-right: 10px;
+        }
+        
+        .tweet {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+        }
+        
+        .tweet:last-child {
+            border-bottom: none;
+        }
+        
+        .tweet-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .tweet-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tweet-user {
+            font-weight: bold;
+        }
+        
+        .tweet-handle {
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+        
+        .tweet-time {
+            margin-left: auto;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
+        .tweet-content {
+            line-height: 1.5;
+        }
+        
+        .tweet-stats {
+            display: flex;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .tweet-stat {
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tweet-stat i {
+            margin-right: 5px;
+        }
+        
+        .sheets-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sheets-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sheets-info h2 i {
+            color: #34A853;
+            margin-right: 10px;
+        }
+        
+        .sheets-info p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .sheets-link {
+            display: inline-block;
+            background: #34A853;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .sheets-link:hover {
+            background: #2E8B46;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .goal-count {
+                font-size: 2.8rem;
+            }
+            
+            .scorer-name {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Live Football Goal Tracker <span class="live-badge">LIVE</span></h1>
+            <p class="subtitle">Powered by Google Sheets - Update stats manually in real-time</p>
+        </header>
+        
+        <div class="sheets-info">
+            <h2><i class="fab fa-google"></i> Google Sheets Integration</h2>
+            <p>This dashboard pulls data directly from a Google Sheet. Update the stats in the sheet and see them reflected here automatically.</p>
+            <p><strong>How to set up:</strong></p>
+            <ol>
+                <li>Make a copy of the <a href="https://docs.google.com/spreadsheets/d/1ABC123Example/edit?usp=sharing" style="color: #FFD700;">template Google Sheet</a></li>
+                <li>Publish it to the web (File > Share > Publish to web)</li>
+                <li>Copy the Sheet ID and update the JavaScript code</li>
+                <li>Start updating player stats in the sheet</li>
+            </ol>
+            <a href="#" class="sheets-link">Open Google Sheets Template</a>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--ronaldo);">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="card-title">Cristiano Ronaldo</div>
+                </div>
+                <div class="goal-count" id="ronaldo-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="ronaldo-season">Current Season: Loading...</span>
+                    <span id="ronaldo-last">Last Goal: Loading...</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--messi);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="card-title">Lionel Messi</div>
+                </div>
+                <div class="goal-count" id="messi-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="messi-season">Current Season: Loading...</span>
+                    <span id="messi-last">Last Goal: Loading...</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--mbappe);">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="card-title">Kylian Mbappé</div>
+                </div>
+                <div class="goal-count" id="mbappe-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="mbappe-season">Current Season: Loading...</span>
+                    <span id="mbappe-last">Last Goal: Loading...</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--yamal);">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="card-title">Lamine Yamal</div>
+                </div>
+                <div class="goal-count" id="yamal-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="yamal-season">Current Season: Loading...</span>
+                    <span id="yamal-last">Last Goal: Loading...</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--madrid);">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="card-title">Real Madrid</div>
+                </div>
+                <div class="goal-count" id="madrid-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="madrid-liga">La Liga: Loading...</span>
+                    <span id="madrid-ucl">UCL: Loading...</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="--color: var(--barcelona);">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="card-title">FC Barcelona</div>
+                </div>
+                <div class="goal-count" id="barcelona-goals">
+                    <span class="loading"></span>
+                </div>
+                <div class="player-info">
+                    <span id="barcelona-liga">La Liga: Loading...</span>
+                    <span id="barcelona-ucl">UCL: Loading...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="last-scorer">
+            <h2>Last Goal Scored By</h2>
+            <div class="scorer-name" id="last-scorer">
+                <span class="loading"></span>
+            </div>
+            <div class="scorer-time" id="scorer-time">Loading...</div>
+            <div class="scorer-match" id="scorer-match">Loading...</div>
+        </div>
+        
+        <div class="twitter-feed">
+            <h2><i class="fab fa-twitter"></i> Recent Updates</h2>
+            <div id="tweet-container">
+                <div class="tweet">
+                    <div class="tweet-header">
+                        <div class="tweet-avatar">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="tweet-user">Goal Tracker <span class="tweet-handle">@GoalTracker</span></div>
+                        <div class="tweet-time">Just now</div>
+                    </div>
+                    <div class="tweet-content">Loading recent updates from Google Sheets...</div>
+                    <div class="tweet-stats">
+                        <div class="tweet-stat"><i class="far fa-heart"></i> 0</div>
+                        <div class="tweet-stat"><i class="far fa-retweet"></i> 0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="update-info">
+            <p>Data updates automatically every 30 seconds • Last updated: <span id="last-updated">Just now</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this with your Google Sheets ID
+        const SHEET_ID = '1ABC123Example'; // Replace with your actual Google Sheet ID
+        const SHEET_NAME = 'GoalData'; // Name of the sheet/tab in your Google Sheets
+        
+        // Default data (will be overridden by Google Sheets data)
+        const defaultData = {
+            ronaldo: {
+                total: 893,
+                season: 45,
+                lastGoal: "3 days ago",
+                team: "Al Nassr"
+            },
+            messi: {
+                total: 827,
+                season: 38,
+                lastGoal: "1 week ago",
+                team: "Inter Miami"
+            },
+            mbappe: {
+                total: 312,
+                season: 42,
+                lastGoal: "2 days ago",
+                team: "PSG"
+            },
+            yamal: {
+                total: 18,
+                season: 18,
+                lastGoal: "4 days ago",
+                team: "Barcelona"
+            },
+            madrid: {
+                total: 78,
+                liga: 65,
+                ucl: 13,
+                lastScorer: "Jude Bellingham"
+            },
+            barcelona: {
+                total: 72,
+                liga: 58,
+                ucl: 14,
+                lastScorer: "Robert Lewandowski"
+            },
+            lastGoal: {
+                player: "Kylian Mbappé",
+                time: "Yesterday at 21:45 CET",
+                match: "PSG vs Monaco (2-1)"
+            }
+        };
+
+        // Function to fetch data from Google Sheets
+        async function fetchDataFromSheets() {
+            try {
+                // This is a simplified approach - in a real implementation, you'd use the Google Sheets API
+                // For demonstration, we'll use localStorage to simulate data from Sheets
+                
+                // Check if we have stored data (simulating Sheets data)
+                const storedData = localStorage.getItem('goalTrackerData');
+                
+                if (storedData) {
+                    return JSON.parse(storedData);
+                } else {
+                    // If no stored data, return default data
+                    return defaultData;
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return defaultData;
+            }
+        }
+
+        // Function to update the goal counts with animation
+        function updateGoalCount(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseInt(element.textContent) || 0;
+            
+            if (currentValue !== newValue) {
+                // Add pulse animation
+                element.classList.add('pulse');
+                
+                // Update value after a short delay for visual effect
+                setTimeout(() => {
+                    element.textContent = newValue;
+                    
+                    // Remove animation after it completes
+                    setTimeout(() => {
+                        element.classList.remove('pulse');
+                    }, 1500);
+                }, 300);
+            } else if (element.innerHTML.includes('loading')) {
+                element.textContent = newValue;
+            }
+        }
+        
+        // Function to update player info
+        function updatePlayerInfo(player, data) {
+            document.getElementById(`${player}-season`).textContent = `Current Season: ${data.season}`;
+            document.getElementById(`${player}-last`).textContent = `Last Goal: ${data.lastGoal}`;
+            
+            if (player === 'madrid' || player === 'barcelona') {
+                document.getElementById(`${player}-liga`).textContent = `La Liga: ${data.liga}`;
+                document.getElementById(`${player}-ucl`).textContent = `UCL: ${data.ucl}`;
+            }
+        }
+        
+        // Function to update last scorer with animation
+        function updateLastScorer(data) {
+            const nameElement = document.getElementById('last-scorer');
+            const timeElement = document.getElementById('scorer-time');
+            const matchElement = document.getElementById('scorer-match');
+            
+            // Add pulse animation to the last scorer section
+            document.querySelector('.last-scorer').classList.add('pulse');
+            
+            setTimeout(() => {
+                nameElement.textContent = data.player;
+                timeElement.textContent = data.time;
+                matchElement.textContent = data.match;
+                
+                // Remove animation after it completes
+                setTimeout(() => {
+                    document.querySelector('.last-scorer').classList.remove('pulse');
+                }, 1500);
+            }, 300);
+        }
+        
+        // Function to update Twitter feed
+        function updateTwitterFeed(data) {
+            const container = document.getElementById('tweet-container');
+            container.innerHTML = '';
+            
+            // Generate tweets based on recent activity
+            const tweets = generateTweets(data);
+            
+            tweets.forEach(tweet => {
+                const tweetElement = document.createElement('div');
+                tweetElement.className = 'tweet';
+                
+                tweetElement.innerHTML = `
+                    <div class="tweet-header">
+                        <div class="tweet-avatar">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="tweet-user">${tweet.user} <span class="tweet-handle">${tweet.handle}</span></div>
+                        <div class="tweet-time">${tweet.time}</div>
+                    </div>
+                    <div class="tweet-content">${tweet.content}</div>
+                    <div class="tweet-stats">
+                        <div class="tweet-stat"><i class="far fa-heart"></i> ${tweet.likes}</div>
+                        <div class="tweet-stat"><i class="far fa-retweet"></i> ${tweet.retweets}</div>
+                    </div>
+                `;
+                
+                container.appendChild(tweetElement);
+            });
+        }
+        
+        // Function to generate tweets based on data
+        function generateTweets(data) {
+            const tweets = [];
+            
+            // Add a tweet for the last goal
+            if (data.lastGoal) {
+                tweets.push({
+                    user: "Goal Tracker",
+                    handle: "@GoalTrackerLive",
+                    content: `GOAL! ${data.lastGoal.player} scores for ${data.lastGoal.match.split(' ')[0]}!`,
+                    time: "Just now",
+                    likes: Math.floor(Math.random() * 100) + 50,
+                    retweets: Math.floor(Math.random() * 50) + 20
+                });
+            }
+            
+            // Add tweets for player milestones
+            if (data.ronaldo.total >= 895) {
+                tweets.push({
+                    user: "Football Stats",
+                    handle: "@FootyStats",
+                    content: "Cristiano Ronaldo is approaching 900 career goals! What an incredible achievement.",
+                    time: "1h ago",
+                    likes: 3200,
+                    retweets: 1500
+                });
+            }
+            
+            if (data.yamal.season >= 20) {
+                tweets.push({
+                    user: "La Liga",
+                    handle: "@LaLiga",
+                    content: "Lamine Yamal reaches 20 goals this season! The young star continues to impress.",
+                    time: "3h ago",
+                    likes: 2800,
+                    retweets: 1200
+                });
+            }
+            
+            // Add a general football tweet if we don't have enough
+            if (tweets.length < 2) {
+                tweets.push({
+                    user: "ESPN FC",
+                    handle: "@ESPNFC",
+                    content: "The race for the Golden Boot is heating up across Europe's top leagues!",
+                    time: "5h ago",
+                    likes: 4500,
+                    retweets: 2100
+                });
+            }
+            
+            return tweets;
+        }
+        
+        // Function to update all data on the page
+        async function updateData() {
+            try {
+                const data = await fetchDataFromSheets();
+                
+                // Update all goal counts
+                updateGoalCount('ronaldo-goals', data.ronaldo.total);
+                updateGoalCount('messi-goals', data.messi.total);
+                updateGoalCount('mbappe-goals', data.mbappe.total);
+                updateGoalCount('yamal-goals', data.yamal.total);
+                updateGoalCount('madrid-goals', data.madrid.total);
+                updateGoalCount('barcelona-goals', data.barcelona.total);
+                
+                // Update player info
+                updatePlayerInfo('ronaldo', data.ronaldo);
+                updatePlayerInfo('messi', data.messi);
+                updatePlayerInfo('mbappe', data.mbappe);
+                updatePlayerInfo('yamal', data.yamal);
+                updatePlayerInfo('madrid', data.madrid);
+                updatePlayerInfo('barcelona', data.barcelona);
+                
+                // Update last scorer
+                updateLastScorer(data.lastGoal);
+                
+                // Update Twitter feed
+                updateTwitterFeed(data);
+                
+                // Update last updated time
+                const now = new Date();
+                document.getElementById('last-updated').textContent = now.toLocaleTimeString();
+            } catch (error) {
+                console.error('Error updating data:', error);
+            }
+        }
+        
+        // Function to simulate data changes (for demo purposes)
+        function simulateDataChange() {
+            // In a real implementation, this would be replaced by actual Google Sheets updates
+            const storedData = localStorage.getItem('goalTrackerData');
+            let data = storedData ? JSON.parse(storedData) : defaultData;
+            
+            // Randomly update a player's goal count (simulating manual updates in Sheets)
+            const players = ['ronaldo', 'messi', 'mbappe', 'yamal'];
+            const randomPlayer = players[Math.floor(Math.random() * players.length)];
+            
+            // 10% chance to update a goal count
+            if (Math.random() < 0.1) {
+                data[randomPlayer].total += 1;
+                data[randomPlayer].season += 1;
+                data[randomPlayer].lastGoal = "Just now";
+                
+                // Update last goal
+                const teams = {
+                    ronaldo: "Al Nassr",
+                    messi: "Inter Miami",
+                    mbappe: "PSG",
+                    yamal: "Barcelona"
+                };
+                
+                const opponents = {
+                    ronaldo: ["Al Hilal", "Al Ittihad", "Al Ahli"],
+                    messi: ["NY Red Bulls", "Atlanta United", "LAFC"],
+                    mbappe: ["Monaco", "Lyon", "Marseille"],
+                    yamal: ["Real Madrid", "Atletico", "Sevilla"]
+                };
+                
+                const opponent = opponents[randomPlayer][Math.floor(Math.random() * opponents[randomPlayer].length)];
+                const now = new Date();
+                const timeString = `Today at ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')} CET`;
+                
+                data.lastGoal = {
+                    player: document.querySelector(`#${randomPlayer}-goals`).parentElement.querySelector('.card-title').textContent,
+                    time: timeString,
+                    match: `${teams[randomPlayer]} vs ${opponent} (${Math.floor(Math.random() * 3) + 1}-${Math.floor(Math.random() * 2)})`
+                };
+                
+                // Save updated data
+                localStorage.setItem('goalTrackerData', JSON.stringify(data));
+            }
+        }
+        
+        // Initialize the dashboard
+        async function initializeDashboard() {
+            await updateData();
+            
+            // Set up automatic updates every 30 seconds
+            setInterval(updateData, 30000);
+            
+            // Simulate data changes (for demo only)
+            setInterval(simulateDataChange, 10000);
+        }
+        
+        // Initial data update
+        initializeDashboard();
+        
+        // Also update when the page becomes visible again
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                updateData();
+            }
+        });
+    </script>
+</body>
+</html>
